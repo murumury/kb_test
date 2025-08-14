@@ -9,5 +9,6 @@
   "scripts": {
     "start": "echo 'React app placeholder'",
     "test": "echo 'No tests defined'"
-  }
+  },
+  "proxy": "http://localhost:8000"
 }
