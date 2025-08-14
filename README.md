@@ -9,14 +9,20 @@ This repository provides a local RAG demo comparing three Python stacks: LangCha
 - `web/` – React interface to build knowledge bases and chat with the three pipelines
 
 ## Running
+Launch both the API server and React client together:
 
-Start the API server:
+```bash
+./start.sh
+```
+
+Alternatively, start the components manually.
+First run the API server:
 
 ```bash
 uvicorn src.app:app --reload
 ```
 
-In another terminal run the React client:
+Then in another terminal start the React client:
 
 ```bash
 cd web
