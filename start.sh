@@ -1,11 +1,23 @@
 #!/usr/bin/env bash
 
-# Simple helper to launch the backend API and React frontend together.
+# Helper to install dependencies and launch backend & frontend together.
 # Usage: ./start.sh
 
 set -e
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Install Python dependencies if FastAPI is missing
+if ! python -c "import fastapi" >/dev/null 2>&1; then
+  echo "Installing backend dependencies..."
+  pip install -r "$ROOT_DIR/requirements.txt"
+fi
+
+# Install frontend dependencies if node_modules absent
+if [ ! -d "$ROOT_DIR/web/node_modules" ]; then
+  echo "Installing frontend dependencies..."
+  (cd "$ROOT_DIR/web" && npm install)
+fi
 
 # Start backend FastAPI server
 (

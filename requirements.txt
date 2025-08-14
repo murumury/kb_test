@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+langchain
+llama-index
+farm-haystack
+sentence-transformers
+openai
