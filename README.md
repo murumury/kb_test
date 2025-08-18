@@ -1,35 +1,39 @@
 # kb_test
 
-This repository provides a local RAG demo comparing three Python stacks: LangChain, LlamaIndex, and Haystack. A unified configuration file (`config/config.yaml`) controls loaders, chunking, embeddings, vector store options, retrieval parameters, and LLM settings so that only implementation details differ between stacks.
+此仓库提供一个本地的 RAG 演示，对比 LangChain、LlamaIndex 和 Haystack 三个 Python 技术栈。通过统一的配置文件（`config/config.yaml`）管理加载器、切片、向量化、向量库选项、检索参数和 LLM 设置，各技术栈之间仅实现细节不同。
 
-## Structure
+## 目录结构
 
-- `config/config.yaml` – shared parameters
-- `src/` – FastAPI server with pipelines for each framework
-- `web/` – React interface to build knowledge bases and chat with the three pipelines
+- `docs/` – 存放知识库文档
+- `config/config.yaml` – 共享参数
+- `src/` – 基于 FastAPI 的服务器，包含每个框架的流水线
+- `web/` – React 前端，用于构建知识库并与三种流水线聊天
 
-## Running
-The project now includes dependency manifests for both sides:
+## 运行方式
 
-- Python backend dependencies are listed in `requirements.txt`.
-- Frontend dependencies are defined in `web/package.json`.
+项目包含后端和前端的依赖清单：
 
-### One-click startup
-Launching both the API server and React client together (with automatic dependency installation):
+- Python 后端依赖位于 `requirements.txt`
+- 前端依赖位于 `web/package.json`
+
+### 一键启动
+
+自动安装依赖并同时启动 API 服务和 React 客户端：
 
 ```bash
 ./start.sh
 ```
 
-### Manual startup
-If you prefer to set up manually:
+### 手动启动
+
+如需手动设置：
 
 ```bash
 pip install -r requirements.txt
 uvicorn src.app:app --reload
 ```
 
-In another terminal:
+另开一个终端：
 
 ```bash
 cd web
@@ -37,4 +41,8 @@ npm install
 npm start
 ```
 
-The code relies on external dependencies that may not be installed by default; the demo serves as a scaffold.
+### 环境变量
+
+将 `.env.example` 复制为 `.env` 并在其中填写 API Key 等敏感信息。
+
+代码依赖于外部服务，本演示仅提供基础骨架。
