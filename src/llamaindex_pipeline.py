@@ -1,19 +1,22 @@
 """LlamaIndex-based RAG pipeline."""
 
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
-# Placeholder imports
+# Placeholder imports (LlamaIndex 0.10–0.12 layout)
 try:
-    from llama_index import SimpleDirectoryReader, VectorStoreIndex, ServiceContext
-    from llama_index.llms import OpenAI
-    from llama_index.embeddings import HuggingFaceEmbedding
+    from llama_index.core import SimpleDirectoryReader, VectorStoreIndex, ServiceContext
+    from llama_index.llms.openai import OpenAI
+    from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 except Exception:  # pragma: no cover - dependency not installed
-    SimpleDirectoryReader = VectorStoreIndex = ServiceContext = None
-    OpenAI = HuggingFaceEmbedding = None
+    SimpleDirectoryReader = None
+    VectorStoreIndex = None
+    ServiceContext = None
+    OpenAI = None
+    HuggingFaceEmbedding = None
 
 from .common import load_config
 
-_INDEX: "VectorStoreIndex" | None = None
+_INDEX: Optional[VectorStoreIndex] = None
 
 
 def build() -> List[str]:

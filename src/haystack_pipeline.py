@@ -1,7 +1,7 @@
 """Haystack-based RAG pipeline."""
 
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 # Placeholder imports
 try:
@@ -14,7 +14,7 @@ except Exception:  # pragma: no cover - dependency not installed
 
 from .common import load_config
 
-_STORE: "FAISSDocumentStore" | None = None
+_STORE: Optional[FAISSDocumentStore] = None
 
 
 def build() -> List[str]:

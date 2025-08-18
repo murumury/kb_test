@@ -1,22 +1,26 @@
 """LangChain-based RAG pipeline."""
 
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
-# Placeholders for actual LangChain imports
+# Placeholders for actual LangChain imports (LangChain 0.2+ layout)
 try:
-    from langchain.document_loaders import DirectoryLoader
+    from langchain_community.document_loaders import DirectoryLoader
     from langchain.text_splitter import RecursiveCharacterTextSplitter
-    from langchain.embeddings import HuggingFaceEmbeddings
-    from langchain.vectorstores import FAISS
-    from langchain.chat_models import ChatOpenAI
+    from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
+    from langchain_community.vectorstores import FAISS
+    from langchain_openai import ChatOpenAI
     from langchain.chains import RetrievalQA
 except Exception:  # pragma: no cover - dependency not installed
-    DirectoryLoader = RecursiveCharacterTextSplitter = HuggingFaceEmbeddings = None
-    FAISS = ChatOpenAI = RetrievalQA = None
+    DirectoryLoader = None
+    RecursiveCharacterTextSplitter = None
+    HuggingFaceEmbeddings = None
+    FAISS = None
+    ChatOpenAI = None
+    RetrievalQA = None
 
 from .common import load_config
 
-_STORE: "FAISS" | None = None
+_STORE: Optional[FAISS] = None
 
 
 def build() -> List[str]:
@@ -67,4 +71,3 @@ def query_with_logs(question: str) -> Tuple[str, List[str]]:
 def query(question: str) -> str:
     """Compatibility wrapper returning only the answer."""
     return query_with_logs(question)[0]
-
