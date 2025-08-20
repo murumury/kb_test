@@ -5,18 +5,18 @@ chunking:
   chunk_size: 500
   overlap: 50
 embedding:
-  model: sentence-transformers/all-MiniLM-L6-v2
+  model: text-embedding-3-small
   api_key: ""
-  base_url: ""
+  base_url: https://api.siliconflow.cn/v1
 vector_store:
   type: faiss
-  dimension: 384
+  dimension: 1536
   metric: cosine
 retrieval:
   top_k: 5
   reranker: null
   reranker_api_key: ""
-  reranker_base_url: ""
+  reranker_base_url: https://api.siliconflow.cn/v1/rerank
   hybrid: false
 llm:
   provider: openai

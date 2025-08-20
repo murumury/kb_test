@@ -2,25 +2,36 @@
 
 from typing import List, Tuple, Optional
 
+import requests
+
 # Placeholders for actual LangChain imports (LangChain 0.2+ layout)
 try:
     from langchain_community.document_loaders import DirectoryLoader, UnstructuredFileLoader
     from langchain.text_splitter import RecursiveCharacterTextSplitter
-    from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
+    from langchain_openai import ChatOpenAI, OpenAIEmbeddings
     from langchain_community.vectorstores import FAISS
-    from langchain_openai import ChatOpenAI
-    from langchain.chains import RetrievalQA
 except Exception:  # pragma: no cover - dependency not installed
     DirectoryLoader = UnstructuredFileLoader = None
     RecursiveCharacterTextSplitter = None
-    HuggingFaceEmbeddings = None
+    ChatOpenAI = OpenAIEmbeddings = None
     FAISS = None
-    ChatOpenAI = None
-    RetrievalQA = None
 
 from .common import load_config
 
 _STORE: Optional[FAISS] = None
+
+
+def siliconflow_rerank(query: str, docs: List[str], model: str, api_key: str, base_url: str) -> List[int]:
+    """Call SiliconFlow rerank API and return ordering indices."""
+    url = base_url.rstrip("/")
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    payload = {"model": model, "query": query, "documents": docs}
+    res = requests.post(url, json=payload, headers=headers, timeout=60)
+    res.raise_for_status()
+    data = res.json()
+    items = data.get("data") or data.get("results") or []
+    order = sorted(range(len(items)), key=lambda k: -(items[k].get("relevance_score", 0)))
+    return order
 
 
 def build() -> List[str]:
@@ -47,9 +58,13 @@ def build() -> List[str]:
     logs.append("Splitting documents")
     chunks = splitter.split_documents(docs)
     logs.append(f"Created {len(chunks)} chunks")
-    embeddings = HuggingFaceEmbeddings(model_name=cfg["embedding"]["model"])
+    emb = OpenAIEmbeddings(
+        model=cfg["embedding"]["model"],
+        api_key=cfg["embedding"]["api_key"],
+        base_url=cfg["embedding"]["base_url"].rstrip("/").rsplit("/v1", 1)[0] + "/v1",
+    )
     logs.append("Creating FAISS store")
-    _STORE = FAISS.from_documents(chunks, embeddings)
+    _STORE = FAISS.from_documents(chunks, emb)
     logs.append("Build complete")
     return logs
 
@@ -64,10 +79,22 @@ def query_with_logs(question: str) -> Tuple[str, List[str]]:
         return "LangChain dependencies missing", logs
     cfg = load_config()
     retriever = _STORE.as_retriever(search_type="similarity", search_kwargs={"k": cfg["retrieval"]["top_k"]})
-    llm = ChatOpenAI(model_name=cfg["llm"]["model"], temperature=cfg["llm"]["temperature"])
-    chain = RetrievalQA.from_chain_type(llm, retriever=retriever)
+    logs.append("Retrieving documents")
+    docs = retriever.get_relevant_documents(question)
+    if cfg["retrieval"].get("reranker"):
+        order = siliconflow_rerank(
+            query=question,
+            docs=[d.page_content for d in docs],
+            model=cfg["retrieval"]["reranker"],
+            api_key=cfg["retrieval"]["reranker_api_key"],
+            base_url=cfg["retrieval"]["reranker_base_url"],
+        )
+        docs = [docs[i] for i in order]
+    llm = ChatOpenAI(model=cfg["llm"]["model"], temperature=cfg["llm"]["temperature"])
+    context = "\n\n".join(d.page_content for d in docs)
+    prompt = f"Use the following context to answer the question.\n{context}\n\nQuestion: {question}"
     logs.append("Running query")
-    answer = chain.run(question)
+    answer = llm.predict(prompt)
     logs.append("Query complete")
     return answer, logs
 

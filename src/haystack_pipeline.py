@@ -3,18 +3,47 @@
 from pathlib import Path
 from typing import List, Tuple, Optional
 
-# Placeholder imports
+import requests
+
 try:
-    from haystack import Document
-    from haystack.nodes import EmbeddingRetriever, FARMReader
+    from haystack import Document, component
     from haystack.document_stores import FAISSDocumentStore
-    from haystack.pipelines import ExtractiveQAPipeline
+    from haystack.nodes import FARMReader
+    from haystack_integrations.components.embedders.openai import OpenAITextEmbedder
 except Exception:  # pragma: no cover - dependency not installed
-    Document = EmbeddingRetriever = FARMReader = FAISSDocumentStore = ExtractiveQAPipeline = None
+    Document = FAISSDocumentStore = FARMReader = OpenAITextEmbedder = None
+    component = None
 
 from .common import load_config
 
 _STORE: Optional[FAISSDocumentStore] = None
+
+
+if component is not None:
+
+    @component
+    class SiliconflowReranker:
+        """Minimal reranker using SiliconFlow API."""
+
+        def __init__(self, model: str, api_key: str, base_url: str):
+            self.model = model
+            self.api_key = api_key
+            self.base_url = base_url.rstrip("/")
+
+        @component.output_types(documents=list)
+        def run(self, query: str, documents: list):
+            headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+            payload = {
+                "model": self.model,
+                "query": query,
+                "documents": [d.content for d in documents],
+            }
+            res = requests.post(self.base_url, json=payload, headers=headers, timeout=60)
+            res.raise_for_status()
+            j = res.json()
+            items = j.get("data") or j.get("results") or []
+            order = sorted(range(len(items)), key=lambda k: -(items[k].get("relevance_score", 0)))
+            return {"documents": [documents[i] for i in order]}
 
 
 def build() -> List[str]:
@@ -26,14 +55,17 @@ def build() -> List[str]:
         logs.append("Haystack dependencies not installed")
         _STORE = None
         return logs
-    store = FAISSDocumentStore(embedding_dim=cfg["vector_store"]["dimension"], similarity=cfg["vector_store"]["metric"])
-    retriever = EmbeddingRetriever(
-        document_store=store,
-        embedding_model=cfg["embedding"]["model"],
-        top_k=cfg["retrieval"]["top_k"],
+    store = FAISSDocumentStore(
+        embedding_dim=cfg["vector_store"]["dimension"],
+        similarity=cfg["vector_store"]["metric"],
+    )
+    embedder = OpenAITextEmbedder(
+        model=cfg["embedding"]["model"],
+        api_key=cfg["embedding"]["api_key"],
+        base_url=cfg["embedding"]["base_url"].rstrip("/").rsplit("/v1", 1)[0] + "/v1",
     )
     logs.append("Loading documents")
-    docs = []
+    docs: List[Document] = []
     directory = cfg["loaders"]["directory"]
     pattern = cfg["loaders"]["pattern"]
     for path in Path(directory).glob(pattern):
@@ -55,10 +87,10 @@ def build() -> List[str]:
             with open(path, "r", encoding="utf-8") as f:
                 text = f.read()
         docs.append(Document(content=text, meta={"name": path.name}))
-    store.write_documents(docs)
+    if docs:
+        docs = embedder.run(documents=docs)["documents"]
+        store.write_documents(docs)
     logs.append(f"Wrote {len(docs)} documents")
-    logs.append("Updating embeddings")
-    store.update_embeddings(retriever)
     logs.append("Build complete")
     _STORE = store
     return logs
@@ -73,15 +105,23 @@ def query_with_logs(question: str) -> Tuple[str, List[str]]:
     if _STORE is None:
         return "Haystack dependencies missing", logs
     cfg = load_config()
-    retriever = EmbeddingRetriever(
-        document_store=_STORE,
-        embedding_model=cfg["embedding"]["model"],
-        top_k=cfg["retrieval"]["top_k"],
+    embedder = OpenAITextEmbedder(
+        model=cfg["embedding"]["model"],
+        api_key=cfg["embedding"]["api_key"],
+        base_url=cfg["embedding"]["base_url"].rstrip("/").rsplit("/v1", 1)[0] + "/v1",
     )
+    q_emb = embedder.run(texts=[question])["embeddings"][0]
+    docs = _STORE.query_by_embedding(q_emb, top_k=cfg["retrieval"]["top_k"])
+    if cfg["retrieval"].get("reranker") and component is not None:
+        reranker = SiliconflowReranker(
+            model=cfg["retrieval"]["reranker"],
+            api_key=cfg["retrieval"]["reranker_api_key"],
+            base_url=cfg["retrieval"]["reranker_base_url"],
+        )
+        docs = reranker.run(query=question, documents=docs)["documents"]
     reader = FARMReader(model_name_or_path=cfg["llm"]["model"])
-    pipeline = ExtractiveQAPipeline(reader, retriever)
     logs.append("Running query")
-    result = pipeline.run(query=question, params={"Retriever": {"top_k": cfg["retrieval"]["top_k"]}})
+    result = reader.predict(query=question, documents=docs)
     logs.append("Query complete")
     answer = result["answers"][0].answer if result.get("answers") else ""
     return answer, logs
