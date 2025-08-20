@@ -6,44 +6,28 @@ from typing import List, Tuple, Optional
 import requests
 
 try:
-    from haystack import Document, component
+    from haystack import Document
     from haystack.document_stores import FAISSDocumentStore
-    from haystack.nodes import FARMReader
-    from haystack_integrations.components.embedders.openai import OpenAITextEmbedder
+    from haystack.nodes import FARMReader, EmbeddingRetriever
 except Exception:  # pragma: no cover - dependency not installed
-    Document = FAISSDocumentStore = FARMReader = OpenAITextEmbedder = None
-    component = None
+    Document = FAISSDocumentStore = FARMReader = EmbeddingRetriever = None
+
 
 from .common import load_config
 
 _STORE: Optional[FAISSDocumentStore] = None
 
 
-if component is not None:
+def siliconflow_rerank(query: str, docs: List[Document], model: str, api_key: str, base_url: str) -> List[Document]:
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    payload = {"model": model, "query": query, "documents": [d.content for d in docs]}
+    res = requests.post(base_url.rstrip("/"), json=payload, headers=headers, timeout=60)
+    res.raise_for_status()
+    j = res.json()
+    items = j.get("data") or j.get("results") or []
+    order = sorted(range(len(items)), key=lambda k: -(items[k].get("relevance_score", 0)))
+    return [docs[i] for i in order]
 
-    @component
-    class SiliconflowReranker:
-        """Minimal reranker using SiliconFlow API."""
-
-        def __init__(self, model: str, api_key: str, base_url: str):
-            self.model = model
-            self.api_key = api_key
-            self.base_url = base_url.rstrip("/")
-
-        @component.output_types(documents=list)
-        def run(self, query: str, documents: list):
-            headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
-            payload = {
-                "model": self.model,
-                "query": query,
-                "documents": [d.content for d in documents],
-            }
-            res = requests.post(self.base_url, json=payload, headers=headers, timeout=60)
-            res.raise_for_status()
-            j = res.json()
-            items = j.get("data") or j.get("results") or []
-            order = sorted(range(len(items)), key=lambda k: -(items[k].get("relevance_score", 0)))
-            return {"documents": [documents[i] for i in order]}
 
 
 def build() -> List[str]:
@@ -59,10 +43,13 @@ def build() -> List[str]:
         embedding_dim=cfg["vector_store"]["dimension"],
         similarity=cfg["vector_store"]["metric"],
     )
-    embedder = OpenAITextEmbedder(
-        model=cfg["embedding"]["model"],
+    retriever = EmbeddingRetriever(
+        document_store=None,
+        embedding_model=cfg["embedding"]["model"],
+        model_format="openai",
         api_key=cfg["embedding"]["api_key"],
-        base_url=cfg["embedding"]["base_url"].rstrip("/").rsplit("/v1", 1)[0] + "/v1",
+        api_base=cfg["embedding"]["base_url"].rstrip("/").rsplit("/v1", 1)[0] + "/v1",
+
     )
     logs.append("Loading documents")
     docs: List[Document] = []
@@ -88,7 +75,10 @@ def build() -> List[str]:
                 text = f.read()
         docs.append(Document(content=text, meta={"name": path.name}))
     if docs:
-        docs = embedder.run(documents=docs)["documents"]
+        embeddings = retriever.embed_documents(docs)
+        for doc, emb in zip(docs, embeddings):
+            doc.embedding = emb
+
         store.write_documents(docs)
     logs.append(f"Wrote {len(docs)} documents")
     logs.append("Build complete")
@@ -105,20 +95,26 @@ def query_with_logs(question: str) -> Tuple[str, List[str]]:
     if _STORE is None:
         return "Haystack dependencies missing", logs
     cfg = load_config()
-    embedder = OpenAITextEmbedder(
-        model=cfg["embedding"]["model"],
+    retriever = EmbeddingRetriever(
+        document_store=None,
+        embedding_model=cfg["embedding"]["model"],
+        model_format="openai",
         api_key=cfg["embedding"]["api_key"],
-        base_url=cfg["embedding"]["base_url"].rstrip("/").rsplit("/v1", 1)[0] + "/v1",
+        api_base=cfg["embedding"]["base_url"].rstrip("/").rsplit("/v1", 1)[0] + "/v1",
+        top_k=cfg["retrieval"]["top_k"],
     )
-    q_emb = embedder.run(texts=[question])["embeddings"][0]
+    q_emb = retriever.embed_queries([question])[0]
     docs = _STORE.query_by_embedding(q_emb, top_k=cfg["retrieval"]["top_k"])
-    if cfg["retrieval"].get("reranker") and component is not None:
-        reranker = SiliconflowReranker(
+    if cfg["retrieval"].get("reranker"):
+        docs = siliconflow_rerank(
+            query=question,
+            docs=docs,
+
             model=cfg["retrieval"]["reranker"],
             api_key=cfg["retrieval"]["reranker_api_key"],
             base_url=cfg["retrieval"]["reranker_base_url"],
         )
-        docs = reranker.run(query=question, documents=docs)["documents"]
+
     reader = FARMReader(model_name_or_path=cfg["llm"]["model"])
     logs.append("Running query")
     result = reader.predict(query=question, documents=docs)

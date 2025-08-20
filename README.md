@@ -10,9 +10,9 @@
   - `web/` – 基于 React + Tailwind CSS 的前端，用于构建知识库并与三种流水线聊天
 
 
-## 运行方式
 
 项目包含后端和前端的依赖清单：
+
 
 - Python 后端依赖位于 `requirements.txt`
 - 前端依赖位于 `web/package.json`
