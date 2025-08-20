@@ -134,6 +134,22 @@ export default function App() {
                     onChange={handleConfigChange('embedding', 'model')}
                   />
                 </label>
+                <label className="form-control">
+                  <span className="label-text">API Key</span>
+                  <input
+                    className="input input-bordered"
+                    value={config.embedding.api_key}
+                    onChange={handleConfigChange('embedding', 'api_key')}
+                  />
+                </label>
+                <label className="form-control">
+                  <span className="label-text">Base URL</span>
+                  <input
+                    className="input input-bordered"
+                    value={config.embedding.base_url}
+                    onChange={handleConfigChange('embedding', 'base_url')}
+                  />
+                </label>
               </div>
 
               <div className="space-y-2">
@@ -184,6 +200,22 @@ export default function App() {
                     onChange={handleConfigChange('retrieval', 'reranker')}
                   />
                 </label>
+                <label className="form-control">
+                  <span className="label-text">Reranker API Key</span>
+                  <input
+                    className="input input-bordered"
+                    value={config.retrieval.reranker_api_key}
+                    onChange={handleConfigChange('retrieval', 'reranker_api_key')}
+                  />
+                </label>
+                <label className="form-control">
+                  <span className="label-text">Reranker Base URL</span>
+                  <input
+                    className="input input-bordered"
+                    value={config.retrieval.reranker_base_url}
+                    onChange={handleConfigChange('retrieval', 'reranker_base_url')}
+                  />
+                </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <span className="label-text">Hybrid</span>
                   <input
@@ -221,6 +253,22 @@ export default function App() {
                     className="input input-bordered"
                     value={config.llm.temperature}
                     onChange={handleConfigChange('llm', 'temperature')}
+                  />
+                </label>
+                <label className="form-control">
+                  <span className="label-text">API Key</span>
+                  <input
+                    className="input input-bordered"
+                    value={config.llm.api_key}
+                    onChange={handleConfigChange('llm', 'api_key')}
+                  />
+                </label>
+                <label className="form-control">
+                  <span className="label-text">Base URL</span>
+                  <input
+                    className="input input-bordered"
+                    value={config.llm.base_url}
+                    onChange={handleConfigChange('llm', 'base_url')}
                   />
                 </label>
               </div>
