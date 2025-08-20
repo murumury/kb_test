@@ -7,3 +7,4 @@ web/node_modules/
 faiss_document_store.db*
 faiss_index.faiss
 faiss_index.json
+
