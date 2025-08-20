@@ -1,13 +1,13 @@
 # kb_test
 
-此仓库提供一个本地的 RAG 演示，对比 LangChain、LlamaIndex 和 Haystack 三个 Python 技术栈。通过统一的配置文件（`config/config.yaml`）管理加载器、切片、向量化、向量库选项、检索参数和 LLM 设置，各技术栈之间仅实现细节不同。默认读取 `docs` 目录下的 `txt`、`md`、`pdf` 文件。也可以在前端页面直接修改上述配置，无需手动编辑 YAML。
+此仓库提供一个本地的 RAG 演示，对比 LangChain、LlamaIndex 和 Haystack 三个 Python 技术栈。前端界面使用 Tailwind CSS 与 DaisyUI，风格简约现代。通过统一的配置文件（`config/config.yaml`）管理加载器、切片、向量化、向量库选项、检索参数和 LLM 设置，各技术栈之间仅实现细节不同。默认读取 `docs` 目录下的 `txt`、`md`、`pdf` 文件。也可以在前端页面直接修改上述配置，无需手动编辑 YAML。
 
 ## 目录结构
 
 - `docs/` – 存放知识库文档（支持 `txt`、`md`、`pdf`）
 - `config/config.yaml` – 共享参数
 - `src/` – 基于 FastAPI 的服务器，包含每个框架的流水线
-- `web/` – React 前端，用于构建知识库并与三种流水线聊天
+  - `web/` – 基于 React + Tailwind CSS 的前端，用于构建知识库并与三种流水线聊天
 
 ## 运行方式
 
