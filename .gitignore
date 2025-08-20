@@ -4,3 +4,6 @@ __pycache__/
 node_modules/
 web/node_modules/
 .env
+faiss_document_store.db*
+faiss_index.faiss
+faiss_index.json

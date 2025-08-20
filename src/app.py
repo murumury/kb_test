@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from . import haystack_pipeline, langchain_pipeline, llamaindex_pipeline
-from .common import load_config, save_config
+from .common import load_config, save_config, clear_history
 
 PIPELINES = {
     "langchain": langchain_pipeline,
@@ -29,6 +29,10 @@ class QueryResponse(BaseModel):
 
 class BuildResponse(BaseModel):
     logs: Dict[str, List[str]]
+
+
+class ClearResponse(BaseModel):
+    logs: List[str]
 
 
 class ConfigModel(BaseModel):
@@ -63,6 +67,13 @@ def build() -> BuildResponse:
         else:
             logs[name] = ["build not implemented"]
     return BuildResponse(logs=logs)
+
+
+@app.post("/clear", response_model=ClearResponse)
+def clear() -> ClearResponse:
+    """删除 FAISS 索引和数据库文件。"""
+    logs = clear_history()
+    return ClearResponse(logs=logs)
 
 
 @app.post("/query", response_model=QueryResponse)

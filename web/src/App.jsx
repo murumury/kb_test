@@ -40,6 +40,7 @@ function ChatPanel({ label, pipeline }) {
 
 export default function App() {
   const [buildLogs, setBuildLogs] = useState({});
+  const [clearLogs, setClearLogs] = useState([]);
   const [config, setConfig] = useState(null);
 
   useEffect(() => {
@@ -71,6 +72,13 @@ export default function App() {
     const resp = await fetch('/build', { method: 'POST' });
     const data = await resp.json();
     setBuildLogs(data.logs || {});
+  };
+
+  const handleClear = async () => {
+    const resp = await fetch('/clear', { method: 'POST' });
+    const data = await resp.json();
+    setClearLogs(data.logs || []);
+    setBuildLogs({});
   };
 
   return (
@@ -277,9 +285,21 @@ export default function App() {
           </div>
         )}
 
-        <button className="btn btn-secondary" onClick={handleBuild}>
-          构建知识库
-        </button>
+        <div className="flex gap-2">
+          <button className="btn btn-secondary" onClick={handleBuild}>
+            构建知识库
+          </button>
+          <button className="btn btn-outline" onClick={handleClear}>
+            清除历史数据
+          </button>
+        </div>
+
+        {clearLogs.length > 0 && (
+          <div className="bg-base-100 shadow rounded p-4">
+            <h3 className="font-medium">清理结果</h3>
+            <pre className="text-sm whitespace-pre-wrap">{clearLogs.join('\n')}</pre>
+          </div>
+        )}
 
         {Object.entries(buildLogs).map(([name, logs]) => (
           <div key={name} className="bg-base-100 shadow rounded p-4">

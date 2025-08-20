@@ -38,3 +38,23 @@ def save_config(config: Dict[str, Any], path: str = "config/config.yaml") -> Non
     with open(Path(path), "w", encoding="utf-8") as f:
         yaml.safe_dump(config, f, allow_unicode=True)
 
+
+def clear_history(path: Path = Path(".")) -> list[str]:
+    """删除默认的 FAISS 索引和 SQLite 数据库文件。"""
+    targets = [
+        "faiss_document_store.db",
+        "faiss_document_store.db-shm",
+        "faiss_document_store.db-wal",
+        "faiss_index.faiss",
+        "faiss_index.json",
+    ]
+    logs: list[str] = []
+    for name in targets:
+        p = path / name
+        if p.exists():
+            p.unlink()
+            logs.append(f"删除 {name}")
+    if not logs:
+        logs.append("未找到历史数据")
+    return logs
+
