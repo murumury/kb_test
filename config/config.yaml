@@ -1,6 +1,6 @@
 loaders:
-  directory: ./data
-  pattern: "*.txt"
+  directory: ./docs
+  pattern: "*.*"
 chunking:
   chunk_size: 500
   overlap: 50

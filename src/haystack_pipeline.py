@@ -37,8 +37,24 @@ def build() -> List[str]:
     directory = cfg["loaders"]["directory"]
     pattern = cfg["loaders"]["pattern"]
     for path in Path(directory).glob(pattern):
-        with open(path, "r", encoding="utf-8") as f:
-            docs.append(Document(content=f.read(), meta={"name": path.name}))
+        ext = path.suffix.lower()
+        if ext not in {".txt", ".md", ".pdf"}:
+            continue
+        if ext == ".pdf":
+            try:
+                from pypdf import PdfReader
+
+                text = ""
+                with open(path, "rb") as f:
+                    reader = PdfReader(f)
+                    for page in reader.pages:
+                        text += page.extract_text() or ""
+            except Exception:
+                continue
+        else:
+            with open(path, "r", encoding="utf-8") as f:
+                text = f.read()
+        docs.append(Document(content=text, meta={"name": path.name}))
     store.write_documents(docs)
     logs.append(f"Wrote {len(docs)} documents")
     logs.append("Updating embeddings")

@@ -4,14 +4,14 @@ from typing import List, Tuple, Optional
 
 # Placeholders for actual LangChain imports (LangChain 0.2+ layout)
 try:
-    from langchain_community.document_loaders import DirectoryLoader
+    from langchain_community.document_loaders import DirectoryLoader, UnstructuredFileLoader
     from langchain.text_splitter import RecursiveCharacterTextSplitter
     from langchain_community.embeddings.huggingface import HuggingFaceEmbeddings
     from langchain_community.vectorstores import FAISS
     from langchain_openai import ChatOpenAI
     from langchain.chains import RetrievalQA
 except Exception:  # pragma: no cover - dependency not installed
-    DirectoryLoader = None
+    DirectoryLoader = UnstructuredFileLoader = None
     RecursiveCharacterTextSplitter = None
     HuggingFaceEmbeddings = None
     FAISS = None
@@ -32,7 +32,11 @@ def build() -> List[str]:
         logs.append("LangChain dependencies not installed")
         _STORE = None
         return logs
-    loader = DirectoryLoader(cfg["loaders"]["directory"], glob=cfg["loaders"]["pattern"])
+    loader = DirectoryLoader(
+        cfg["loaders"]["directory"],
+        glob=cfg["loaders"]["pattern"],
+        loader_cls=UnstructuredFileLoader,
+    )
     logs.append("Loading documents")
     docs = loader.load()
     logs.append(f"Loaded {len(docs)} documents")

@@ -28,7 +28,11 @@ def build() -> List[str]:
         logs.append("LlamaIndex dependencies not installed")
         _INDEX = None
         return logs
-    reader = SimpleDirectoryReader(cfg["loaders"]["directory"], recursive=True)
+    reader = SimpleDirectoryReader(
+        cfg["loaders"]["directory"],
+        recursive=True,
+        required_exts=[".txt", ".md", ".pdf"],
+    )
     logs.append("Loading documents")
     docs = reader.load_data()
     logs.append(f"Loaded {len(docs)} documents")
