@@ -12,6 +12,7 @@ try:
 except Exception:  # pragma: no cover - dependency not installed
     Document = FAISSDocumentStore = FARMReader = EmbeddingRetriever = None
 
+
 from .common import load_config
 
 _STORE: Optional[FAISSDocumentStore] = None
@@ -26,6 +27,7 @@ def siliconflow_rerank(query: str, docs: List[Document], model: str, api_key: st
     items = j.get("data") or j.get("results") or []
     order = sorted(range(len(items)), key=lambda k: -(items[k].get("relevance_score", 0)))
     return [docs[i] for i in order]
+
 
 
 def build() -> List[str]:
@@ -47,6 +49,7 @@ def build() -> List[str]:
         model_format="openai",
         api_key=cfg["embedding"]["api_key"],
         api_base=cfg["embedding"]["base_url"].rstrip("/").rsplit("/v1", 1)[0] + "/v1",
+
     )
     logs.append("Loading documents")
     docs: List[Document] = []
@@ -75,6 +78,7 @@ def build() -> List[str]:
         embeddings = retriever.embed_documents(docs)
         for doc, emb in zip(docs, embeddings):
             doc.embedding = emb
+
         store.write_documents(docs)
     logs.append(f"Wrote {len(docs)} documents")
     logs.append("Build complete")
@@ -105,10 +109,12 @@ def query_with_logs(question: str) -> Tuple[str, List[str]]:
         docs = siliconflow_rerank(
             query=question,
             docs=docs,
+
             model=cfg["retrieval"]["reranker"],
             api_key=cfg["retrieval"]["reranker_api_key"],
             base_url=cfg["retrieval"]["reranker_base_url"],
         )
+
     reader = FARMReader(model_name_or_path=cfg["llm"]["model"])
     logs.append("Running query")
     result = reader.predict(query=question, documents=docs)
