@@ -13,6 +13,7 @@
 
 项目包含后端和前端的依赖清单：
 
+
 - Python 后端依赖位于 `requirements.txt`
 - 前端依赖位于 `web/package.json`
 
@@ -47,5 +48,6 @@ npm start
 
 也可以在前端页面的配置表单中直接设置 Embedding、Reranker 和 LLM 模型的 API Key 与 Base URL。
 当需要重新构建知识库时，可点击页面上的「清除历史数据」按钮删除生成的 FAISS 索引和 SQLite 数据库。
+
 
 代码依赖于外部服务，本演示仅提供基础骨架。

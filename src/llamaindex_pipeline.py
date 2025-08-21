@@ -55,6 +55,7 @@ def build() -> List[str]:
         logs.append("No documents loaded; skipping index build")
         _INDEX = None
         return logs
+
     embed_model = OpenAIEmbedding(
         model=cfg["embedding"]["model"],
         api_key=cfg["embedding"]["api_key"],
