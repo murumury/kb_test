@@ -53,6 +53,10 @@ def build() -> List[str]:
     logs.append("Loading documents")
     docs = loader.load()
     logs.append(f"Loaded {len(docs)} documents")
+    if not docs:
+        logs.append("No documents loaded; skipping FAISS build")
+        _STORE = None
+        return logs
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=cfg["chunking"]["chunk_size"],
         chunk_overlap=cfg["chunking"]["overlap"],
@@ -60,6 +64,11 @@ def build() -> List[str]:
     logs.append("Splitting documents")
     chunks = splitter.split_documents(docs)
     logs.append(f"Created {len(chunks)} chunks")
+    if not chunks:
+        logs.append("No chunks generated; skipping FAISS build")
+        _STORE = None
+        return logs
+
     emb = OpenAIEmbeddings(
         model=cfg["embedding"]["model"],
         api_key=cfg["embedding"]["api_key"],
