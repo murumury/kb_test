@@ -47,6 +47,8 @@ def build() -> List[str]:
         cfg["loaders"]["directory"],
         glob=cfg["loaders"]["pattern"],
         loader_cls=UnstructuredFileLoader,
+        silent_errors=True,
+
     )
     logs.append("Loading documents")
     docs = loader.load()
