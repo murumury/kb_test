@@ -1,11 +1,12 @@
 """FastAPI server exposing build and query endpoints for RAG pipelines."""
 
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from . import haystack_pipeline, langchain_pipeline, llamaindex_pipeline
+from .common import load_config, save_config, clear_history
 
 PIPELINES = {
     "langchain": langchain_pipeline,
@@ -30,6 +31,32 @@ class BuildResponse(BaseModel):
     logs: Dict[str, List[str]]
 
 
+class ClearResponse(BaseModel):
+    logs: List[str]
+
+
+class ConfigModel(BaseModel):
+    loaders: Dict[str, Any]
+    chunking: Dict[str, Any]
+    embedding: Dict[str, Any]
+    vector_store: Dict[str, Any]
+    retrieval: Dict[str, Any]
+    llm: Dict[str, Any]
+
+
+@app.get("/config", response_model=ConfigModel)
+def get_config() -> ConfigModel:
+    """Return current configuration."""
+    return ConfigModel(**load_config())
+
+
+@app.post("/config", response_model=ConfigModel)
+def update_config(cfg: ConfigModel) -> ConfigModel:
+    """Update configuration and persist to disk."""
+    save_config(cfg.dict())
+    return cfg
+
+
 @app.post("/build", response_model=BuildResponse)
 def build() -> BuildResponse:
     """Trigger building all knowledge bases."""
@@ -40,6 +67,13 @@ def build() -> BuildResponse:
         else:
             logs[name] = ["build not implemented"]
     return BuildResponse(logs=logs)
+
+
+@app.post("/clear", response_model=ClearResponse)
+def clear() -> ClearResponse:
+    """删除 FAISS 索引和数据库文件。"""
+    logs = clear_history()
+    return ClearResponse(logs=logs)
 
 
 @app.post("/query", response_model=QueryResponse)
