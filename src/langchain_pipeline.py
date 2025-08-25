@@ -48,6 +48,7 @@ def build() -> List[str]:
         glob=cfg["loaders"]["pattern"],
         loader_cls=UnstructuredFileLoader,
         silent_errors=True,
+
     )
     logs.append("Loading documents")
     docs = loader.load()
@@ -67,6 +68,7 @@ def build() -> List[str]:
         logs.append("No chunks generated; skipping FAISS build")
         _STORE = None
         return logs
+
     emb = OpenAIEmbeddings(
         model=cfg["embedding"]["model"],
         api_key=cfg["embedding"]["api_key"],
