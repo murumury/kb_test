@@ -1,6 +1,7 @@
 # kb_test
 
-此仓库提供一个本地的 RAG 演示，对比 LangChain、LlamaIndex 和 Haystack 三个 Python 技术栈。前端界面使用 Tailwind CSS 与 DaisyUI，风格简约现代。通过统一的配置文件（`config/config.yaml`）管理加载器、切片、向量化、向量库选项、检索参数和 LLM 设置，各技术栈之间仅实现细节不同。默认读取 `docs` 目录下的 `txt`、`md`、`pdf` 文件。也可以在前端页面直接修改上述配置，无需手动编辑 YAML。
+此仓库提供一个本地的 RAG 演示，对比 LangChain、LlamaIndex 和 Haystack 三个 Python 技术栈。前端界面使用 Tailwind CSS 与 DaisyUI，风格简约现代。通过统一的配置文件（`config/config.yaml`）管理加载器、切片、向量化、向量库选项、检索参数和 LLM 设置，各技术栈之间仅实现细节不同。默认读取 `docs` 目录下的 `txt`、`md`、`pdf` 文件，并使用 SiliconFlow 提供的 `BAAI/bge-m3` 向量模型（1024 维）。也可以在前端页面直接修改上述配置，无需手动编辑 YAML。
+
 
 ## 目录结构
 
@@ -46,7 +47,7 @@ npm start
 
 将 `.env.example` 复制为 `.env` 并在其中填写 API Key 等敏感信息。
 
-也可以在前端页面的配置表单中直接设置 Embedding、Reranker 和 LLM 模型的 API Key 与 Base URL。
+也可以在前端页面的配置表单中直接设置 Embedding、Reranker 和 LLM 模型的 API Key 与 Base URL。若需要解析扫描版 PDF，请确保系统已安装 [Tesseract OCR](https://tesseract-ocr.github.io/tessdoc/Home.html)（如 `apt-get install tesseract-ocr`），并安装 `pytesseract` 依赖。
 当需要重新构建知识库时，可点击页面上的「清除历史数据」按钮删除生成的 FAISS 索引和 SQLite 数据库。
 
 

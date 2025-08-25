@@ -5,12 +5,14 @@ chunking:
   chunk_size: 500
   overlap: 50
 embedding:
-  model: text-embedding-3-small
+  model: BAAI/bge-m3
+
   api_key: ""
   base_url: https://api.siliconflow.cn/v1
 vector_store:
   type: faiss
-  dimension: 1536
+  dimension: 1024
+
   metric: cosine
 retrieval:
   top_k: 5

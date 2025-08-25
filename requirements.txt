@@ -11,4 +11,5 @@ requests>=2.31
 tokenizers>=0.15,<0.21
 pypdf
 unstructured[pdf]
+pytesseract
 
